@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-const apiBaseUrl = "/api";
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
 
 export function App() {
   const [text, setText] = useState("Hello from Threads LLM Publisher");
@@ -9,7 +9,12 @@ export function App() {
   const [result, setResult] = useState("Ready");
   const [connected, setConnected] = useState<boolean | null>(null);
 
-  const callbackHint = useMemo(() => `${window.location.origin}${apiBaseUrl}/auth/threads/callback`, []);
+  const callbackHint = useMemo(() => {
+    if (apiBaseUrl.startsWith("http://") || apiBaseUrl.startsWith("https://")) {
+      return `${apiBaseUrl}/auth/threads/callback`;
+    }
+    return `${window.location.origin}${apiBaseUrl}/auth/threads/callback`;
+  }, []);
 
   // Check connection status on load & handle OAuth redirect params
   useEffect(() => {
