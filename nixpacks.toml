@@ -5,4 +5,4 @@ cmds = ["npm install"]
 cmds = ["npm run build -w @myapps/api"]
 
 [start]
-cmd = "node apps/api/dist/index.js"
+cmd = "NODE_ENV=production node apps/api/dist/index.js"
