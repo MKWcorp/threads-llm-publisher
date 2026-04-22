@@ -60,12 +60,18 @@ authRouter.get("/threads/callback", async (req, res) => {
 
     const accessToken = longLivedData.access_token ?? tokenData.access_token;
     const expiresIn = longLivedData.expires_in ?? 60 * 24 * 60 * 60; // default 60 days in seconds
-    const threadsUserId = String(tokenData.user_id ?? "me");
+    
+    // Step 3: Get the actual Threads user ID by calling /me
+    const meRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id&access_token=${accessToken}`);
+    const meData = await meRes.json() as { id?: string; error?: { message: string } };
+    if (!meData.id) {
+      throw new Error(meData.error?.message || "Failed to fetch Threads user ID");
+    }
 
     tokenStore.save({
       accessToken,
       expiresAt: Date.now() + expiresIn * 1000,
-      threadsUserId
+      threadsUserId: meData.id
     });
 
     return res.redirect(`${config.WEB_BASE_URL}/?connected=true`);
