@@ -8,6 +8,7 @@ export function App() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [result, setResult] = useState("Ready");
   const [connected, setConnected] = useState<boolean | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
 
   const callbackHint = useMemo(() => {
     if (apiBaseUrl.startsWith("http://") || apiBaseUrl.startsWith("https://")) {
@@ -37,23 +38,58 @@ export function App() {
   }
 
   async function postNow() {
-    const res = await fetch(`${apiBaseUrl}/publish/now`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, imageUrl: imageUrl || undefined })
-    });
-    const data = await res.json();
-    setResult(JSON.stringify(data, null, 2));
+    setIsPosting(true);
+    setResult("⏳ Posting to Threads...");
+    try {
+      const res = await fetch(`${apiBaseUrl}/publish/now`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, imageUrl: imageUrl || undefined })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        setResult(`❌ Error: ${data.error}`);
+      } else if (data.success) {
+        setResult(`✅ Successfully posted! Thread ID: ${data.threadId || 'N/A'}`);
+        setText(""); // Clear text after success
+        setTimeout(() => setResult("Ready"), 5000); // Auto-clear after 5s
+      } else {
+        setResult(JSON.stringify(data, null, 2));
+      }
+    } catch (err) {
+      setResult(`❌ Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsPosting(false);
+    }
   }
 
   async function schedulePost() {
-    const res = await fetch(`${apiBaseUrl}/publish/schedule`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, imageUrl: imageUrl || undefined, scheduledAt: new Date(scheduledAt).toISOString() })
-    });
-    const data = await res.json();
-    setResult(JSON.stringify(data, null, 2));
+    setIsPosting(true);
+    setResult("⏳ Scheduling post...");
+    try {
+      const res = await fetch(`${apiBaseUrl}/publish/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, imageUrl: imageUrl || undefined, scheduledAt: new Date(scheduledAt).toISOString() })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        setResult(`❌ Error: ${data.error}`);
+      } else if (data.success) {
+        setResult(`✅ Post scheduled for ${new Date(scheduledAt).toLocaleString()}`);
+        setText("");
+        setScheduledAt("");
+        setTimeout(() => setResult("Ready"), 5000);
+      } else {
+        setResult(JSON.stringify(data, null, 2));
+      }
+    } catch (err) {
+      setResult(`❌ Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsPosting(false);
+    }
   }
 
   return (
@@ -63,13 +99,13 @@ export function App() {
       <p>Status: {connected === null ? "Checking..." : connected ? "✅ Connected to Threads" : "❌ Not connected"}</p>
 
       <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
-        <button onClick={connectThreads}>{connected ? "Reconnect Threads Account" : "Connect Threads Account"}</button>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={5} maxLength={500} />
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://public-image-url.jpg (optional)" />
+        <button onClick={connectThreads} disabled={isPosting}>{connected ? "Reconnect Threads Account" : "Connect Threads Account"}</button>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={5} maxLength={500} disabled={isPosting} />
+        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://public-image-url.jpg (optional)" disabled={isPosting} />
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={postNow}>Post Now</button>
-          <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
-          <button onClick={schedulePost} disabled={!scheduledAt}>Schedule</button>
+          <button onClick={postNow} disabled={isPosting || !text.trim()}>{isPosting ? "Posting..." : "Post Now"}</button>
+          <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} disabled={isPosting} />
+          <button onClick={schedulePost} disabled={isPosting || !scheduledAt}>{isPosting ? "Scheduling..." : "Schedule"}</button>
         </div>
       </div>
 
