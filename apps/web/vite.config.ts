@@ -12,5 +12,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, "")
       }
     }
+  },
+  preview: {
+    port: 4173,
+    allowedHosts: ["app.mkwiro.online", "localhost"]
   }
 });
