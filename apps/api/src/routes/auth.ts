@@ -72,6 +72,8 @@ authRouter.get("/threads/callback", async (req, res) => {
       accessToken,
       expiresAt: Date.now() + expiresIn * 1000,
       threadsUserId: meData.id
+    }).catch(() => {
+      throw new Error("Failed to save token to database");
     });
 
     return res.redirect(`${config.WEB_BASE_URL}/?connected=true`);
@@ -81,10 +83,10 @@ authRouter.get("/threads/callback", async (req, res) => {
   }
 });
 
-authRouter.get("/threads/status", (_req, res) => {
-  const token = tokenStore.get();
+authRouter.get("/threads/status", async (_req, res) => {
+  const token = await tokenStore.get();
   return res.json({
-    connected: tokenStore.isConnected(),
+    connected: token ? true : false,
     userId: token?.threadsUserId ?? null,
     expiresAt: token?.expiresAt ?? null
   });

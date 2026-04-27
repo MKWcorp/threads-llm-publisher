@@ -1,14 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { Compose } from "./components/Compose";
+import { Scheduled } from "./components/Scheduled";
+import { Published } from "./components/Published";
+import { Comments } from "./components/Comments";
+import { Settings } from "./components/Settings";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
 
+type Tab = "compose" | "scheduled" | "published" | "comments" | "settings";
+
+const tabs: { id: Tab; label: string; icon: string }[] = [
+  { id: "compose", label: "Compose", icon: "✍️" },
+  { id: "scheduled", label: "Scheduled", icon: "📅" },
+  { id: "published", label: "Published", icon: "✅" },
+  { id: "comments", label: "Comments", icon: "💬" },
+  { id: "settings", label: "Settings", icon: "⚙️" }
+];
+
 export function App() {
-  const [text, setText] = useState("Hello from Threads LLM Publisher");
-  const [imageUrl, setImageUrl] = useState("");
-  const [scheduledAt, setScheduledAt] = useState("");
-  const [result, setResult] = useState("Ready");
-  const [connected, setConnected] = useState<boolean | null>(null);
-  const [isPosting, setIsPosting] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("compose");
+  const [refreshScheduled, setRefreshScheduled] = useState(0);
 
   const callbackHint = useMemo(() => {
     if (apiBaseUrl.startsWith("http://") || apiBaseUrl.startsWith("https://")) {
@@ -17,99 +28,71 @@ export function App() {
     return `${window.location.origin}${apiBaseUrl}/auth/threads/callback`;
   }, []);
 
-  // Check connection status on load & handle OAuth redirect params
+  // Handle OAuth redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("connected") === "true") {
       window.history.replaceState({}, "", "/");
+      setActiveTab("compose");
     }
     if (params.get("error")) {
-      setResult(`Auth error: ${params.get("error")}`);
+      alert(`Auth error: ${params.get("error")}`);
       window.history.replaceState({}, "", "/");
     }
-    fetch(`${apiBaseUrl}/auth/threads/status`)
-      .then((r) => r.json())
-      .then((d: { connected: boolean }) => setConnected(d.connected))
-      .catch(() => setConnected(false));
   }, []);
 
-  function connectThreads() {
-    window.location.href = `${apiBaseUrl}/auth/threads/start/redirect`;
-  }
-
-  async function postNow() {
-    setIsPosting(true);
-    setResult("⏳ Posting to Threads...");
-    try {
-      const res = await fetch(`${apiBaseUrl}/publish/now`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, imageUrl: imageUrl || undefined })
-      });
-      const data = await res.json();
-      
-      if (data.error) {
-        setResult(`❌ Error: ${data.error}`);
-      } else if (data.success) {
-        setResult(`✅ Successfully posted! Thread ID: ${data.threadId || 'N/A'}`);
-        setText(""); // Clear text after success
-        setTimeout(() => setResult("Ready"), 5000); // Auto-clear after 5s
-      } else {
-        setResult(JSON.stringify(data, null, 2));
-      }
-    } catch (err) {
-      setResult(`❌ Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsPosting(false);
-    }
-  }
-
-  async function schedulePost() {
-    setIsPosting(true);
-    setResult("⏳ Scheduling post...");
-    try {
-      const res = await fetch(`${apiBaseUrl}/publish/schedule`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, imageUrl: imageUrl || undefined, scheduledAt: new Date(scheduledAt).toISOString() })
-      });
-      const data = await res.json();
-      
-      if (data.error) {
-        setResult(`❌ Error: ${data.error}`);
-      } else if (data.success) {
-        setResult(`✅ Post scheduled for ${new Date(scheduledAt).toLocaleString()}`);
-        setText("");
-        setScheduledAt("");
-        setTimeout(() => setResult("Ready"), 5000);
-      } else {
-        setResult(JSON.stringify(data, null, 2));
-      }
-    } catch (err) {
-      setResult(`❌ Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsPosting(false);
-    }
-  }
-
   return (
-    <main style={{ fontFamily: "Inter, Arial, sans-serif", maxWidth: 760, margin: "2rem auto", padding: "0 1rem" }}>
-      <h1>Threads LLM Publisher</h1>
-      <p>OAuth callback URI: <code>{callbackHint}</code></p>
-      <p>Status: {connected === null ? "Checking..." : connected ? "✅ Connected to Threads" : "❌ Not connected"}</p>
-
-      <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
-        <button onClick={connectThreads} disabled={isPosting}>{connected ? "Reconnect Threads Account" : "Connect Threads Account"}</button>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={5} maxLength={500} disabled={isPosting} />
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://public-image-url.jpg (optional)" disabled={isPosting} />
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={postNow} disabled={isPosting || !text.trim()}>{isPosting ? "Posting..." : "Post Now"}</button>
-          <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} disabled={isPosting} />
-          <button onClick={schedulePost} disabled={isPosting || !scheduledAt}>{isPosting ? "Scheduling..." : "Schedule"}</button>
+    <main style={{ fontFamily: "Inter, Arial, sans-serif", minHeight: "100vh", background: "#fff" }}>
+      {/* Header */}
+      <header style={{ borderBottom: "1px solid #ddd", padding: "1rem", background: "#f9f9f9" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <h1 style={{ margin: 0, fontSize: "1.5em" }}>🧵 Threads LLM Publisher</h1>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.85em", color: "#666" }}>
+            Callback: <code style={{ fontSize: "0.75em" }}>{callbackHint}</code>
+          </p>
         </div>
-      </div>
+      </header>
 
-      <pre style={{ marginTop: 20, background: "#f5f5f5", padding: 12, borderRadius: 8, overflowX: "auto" }}>{result}</pre>
+      {/* Tab Navigation */}
+      <nav style={{ borderBottom: "1px solid #ddd", background: "#f5f5f5" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", overflowX: "auto" }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: "12px 16px",
+                border: "none",
+                background: activeTab === tab.id ? "#fff" : "transparent",
+                borderBottom: activeTab === tab.id ? "3px solid #1f2937" : "3px solid transparent",
+                cursor: "pointer",
+                fontSize: "0.95em",
+                fontWeight: activeTab === tab.id ? "600" : "400",
+                whiteSpace: "nowrap"
+              }}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Content */}
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem" }}>
+        {activeTab === "compose" && (
+          <Compose
+            apiBaseUrl={apiBaseUrl}
+            onDone={() => {
+              setRefreshScheduled((prev) => prev + 1);
+              setTimeout(() => setActiveTab("scheduled"), 1000);
+            }}
+          />
+        )}
+        {activeTab === "scheduled" && <Scheduled apiBaseUrl={apiBaseUrl} key={refreshScheduled} />}
+        {activeTab === "published" && <Published apiBaseUrl={apiBaseUrl} />}
+        {activeTab === "comments" && <Comments apiBaseUrl={apiBaseUrl} />}
+        {activeTab === "settings" && <Settings apiBaseUrl={apiBaseUrl} />}
+      </div>
     </main>
   );
 }

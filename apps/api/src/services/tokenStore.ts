@@ -1,8 +1,7 @@
 import crypto from "node:crypto";
 import { config } from "../config.js";
+import { prisma } from "../lib/prisma.js";
 import type { OAuthToken } from "../types.js";
-
-let encryptedTokenBlob: string | null = null;
 
 const algorithm = "aes-256-gcm";
 const key = crypto.createHash("sha256").update(config.ENCRYPTION_MASTER_KEY).digest();
@@ -26,14 +25,44 @@ function decrypt(value: string) {
 }
 
 export const tokenStore = {
-  save(token: OAuthToken) {
-    encryptedTokenBlob = encrypt(JSON.stringify(token));
+  async save(token: OAuthToken) {
+    const encrypted = encrypt(token.accessToken);
+    await prisma.user.upsert({
+      where: { threadsUserId: token.threadsUserId },
+      create: {
+        threadsUserId: token.threadsUserId,
+        token: {
+          create: { accessToken: encrypted, expiresAt: BigInt(token.expiresAt) }
+        }
+      },
+      update: {
+        token: {
+          upsert: {
+            create: { accessToken: encrypted, expiresAt: BigInt(token.expiresAt) },
+            update: { accessToken: encrypted, expiresAt: BigInt(token.expiresAt) }
+          }
+        }
+      }
+    });
   },
-  get(): OAuthToken | null {
-    if (!encryptedTokenBlob) return null;
-    return JSON.parse(decrypt(encryptedTokenBlob)) as OAuthToken;
+
+  async get(): Promise<OAuthToken | null> {
+    const row = await prisma.token.findFirst({ include: { user: true } });
+    if (!row) return null;
+    return {
+      accessToken: decrypt(row.accessToken),
+      expiresAt: Number(row.expiresAt),
+      threadsUserId: row.user.threadsUserId
+    };
   },
-  isConnected() {
-    return !!encryptedTokenBlob;
+
+  async isConnected(): Promise<boolean> {
+    const count = await prisma.token.count();
+    return count > 0;
+  },
+
+  async getUserId(): Promise<string | null> {
+    const row = await prisma.token.findFirst({ include: { user: true } });
+    return row?.user.id ?? null;
   }
 };

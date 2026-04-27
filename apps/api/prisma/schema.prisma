@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  threadsUserId String       @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  token         Token?
+  jobs          PublishJob[]
+  drafts        Draft[]
+  comments      Comment[]
+}
+
+model Token {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String   // AES-GCM encrypted blob (same key as ENCRYPTION_MASTER_KEY)
+  expiresAt    BigInt   // epoch ms
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PublishJob {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Content — either a single text or JSON array of thread parts
+  text          String        @db.VarChar(500)
+  imageUrl      String?
+  parts         Json?         // String[] — ordered thread parts for multi-part utas
+
+  scheduledAt   DateTime?
+  status        PublishStatus @default(PENDING)
+  error         String?
+
+  // Threads API result
+  threadsPostId String?       // root post ID
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, scheduledAt])
+}
+
+enum PublishStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+model Draft {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  htmlInput   String   @db.Text     // original HTML pasted from LLM
+  parts       Json                  // String[] — split result, editable
+  title       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Comment {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  threadsCommentId String @unique   // Threads API comment ID
+  text          String
+  username      String?
+  repliedAt     DateTime?
+  replyText     String?
+
+  createdAt     DateTime @default(now())
+}
