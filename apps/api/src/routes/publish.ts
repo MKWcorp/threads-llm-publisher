@@ -154,6 +154,9 @@ publishRouter.post("/jobs/:id/reschedule", async (req, res) => {
 publishRouter.get("/posts", async (_req, res) => {
   try {
     const userId = await tokenStore.getUserId();
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const posts = await prisma.publishJob.findMany({
       where: { userId, status: "PUBLISHED" },
       orderBy: { createdAt: "desc" }

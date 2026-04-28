@@ -79,6 +79,9 @@ commentsRouter.post("/:id/reply", async (req, res) => {
 commentsRouter.get("/history", async (_req, res) => {
   try {
     const userId = await tokenStore.getUserId();
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const comments = await prisma.comment.findMany({
       where: { userId, repliedAt: { not: null } },
       orderBy: { createdAt: "desc" }
