@@ -15,7 +15,7 @@ const configSchema = z.object({
   THREADS_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/threads/callback"),
   THREADS_SCOPES: z.string().default("threads_basic,threads_content_publish,threads_manage_replies"),
   ENCRYPTION_MASTER_KEY: z.string().min(16).default("local-dev-key-change-me"),
-  DATABASE_URL: z.string().min(1).default("")
+  DATABASE_URL: z.string().optional().default("")
 });
 
 const parsed = configSchema.safeParse(process.env);
