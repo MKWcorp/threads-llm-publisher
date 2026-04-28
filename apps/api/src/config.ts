@@ -1,9 +1,14 @@
 import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { z } from "zod";
 
 // Load .env only in local dev; in production (Docker/Coolify) env vars are injected directly
 if (process.env.NODE_ENV !== "production") {
-  dotenv.config({ path: new URL("../../../.env", import.meta.url).pathname });
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const envPath = resolve(__dirname, "../../../.env");
+  dotenv.config({ path: envPath });
 }
 
 const configSchema = z.object({
@@ -15,7 +20,7 @@ const configSchema = z.object({
   THREADS_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/threads/callback"),
   THREADS_SCOPES: z.string().default("threads_basic,threads_content_publish,threads_manage_replies"),
   ENCRYPTION_MASTER_KEY: z.string().min(16).default("local-dev-key-change-me"),
-  DATABASE_URL: z.string().optional().default("")
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required")
 });
 
 const parsed = configSchema.safeParse(process.env);
