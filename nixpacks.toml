@@ -4,7 +4,7 @@ cmds = ["npm install"]
 [phases.build]
 cmds = [
   "npm run build -w @myapps/api",
-  "npm run db:generate -w @myapps/api"
+  "npm run build -w @myapps/web"
 ]
 
 [start]
