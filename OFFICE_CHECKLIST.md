@@ -55,10 +55,10 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
   - Should see: `[Prisma] Migration completed`
   - Should see: `✓ Server listening on port 8787`
 - [ ] Wait until status = green
-- [ ] Test health:
+- [x] Test health:
   ```bash
-  curl https://mkwiro.online/api/health
-  # Expected: {"status":"ok"}
+  curl https://api.mkwiro.online/health
+  # Expected: {"ok":true,"service":"api",...}
   ```
 
 ---
@@ -66,6 +66,9 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 ## After Lunch: Feature Testing (30 min)
 
 ### ✅ Phase 1: Authentication (5 min)
+- [x] API auth status reachable (`GET /auth/threads/status` → `{"connected":true,"userId":"26515200971467874",...}`)
+- [x] OAuth URL generated (`GET /auth/threads/start`)
+- [x] API confirms user connected + expiry exists (`expiresAt` future timestamp)
 - [ ] Open https://mkwiro.online
 - [ ] Click **Settings** tab
 - [ ] Click "Reconnect Threads Account"
@@ -78,6 +81,8 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
   - Token expiry (future date)
 
 ### ✅ Phase 2: Compose & Publish Now (5 min)
+- [x] API publish now works (`POST /publish/now` → success + `postId`)
+- [x] Published post persisted (`GET /publish/posts` contains latest test post)
 - [ ] Go to **Compose** tab
 - [ ] Paste sample HTML:
   ```html
@@ -94,6 +99,7 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 - [ ] Verify post appears on your timeline
 
 ### ✅ Phase 3: Schedule & Auto-Publish (10 min)
+- [x] API schedule test created (`POST /publish/schedule` → status `pending`)
 - [ ] Go to **Compose** tab
 - [ ] Paste different HTML
 - [ ] Click "Preview & Split"
@@ -109,6 +115,8 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 - [ ] See your scheduled post in list
 
 ### ✅ Phase 4: Job Management (5 min)
+- [x] API cancel test works (`DELETE /publish/jobs/:id` → status `cancelled`)
+- [x] API reschedule test works (`POST /publish/jobs/:id/reschedule` → `scheduledAt` updated)
 - [ ] Go to **Compose** tab
 - [ ] Create another scheduled post (+10 min)
 - [ ] Go to **Scheduled** tab
@@ -121,6 +129,10 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 - [ ] Job requeues
 
 ### ✅ Phase 5: Comments & Replies (5 min)
+- [x] API comments list works (`GET /comments` → 200 + data)
+- [x] API reply history endpoint works (`GET /comments/history` → 200; empty if no replies yet)
+- [x] API send reply works (`POST /comments/:id/reply` → 200)
+- [x] Reply history now has real data (`GET /comments/history` returns at least 1 record)
 - [ ] Go to **Comments** tab
 - [ ] Click "Refresh" or wait 10 seconds for auto-load
 - [ ] See list of recent comments/mentions
@@ -136,6 +148,7 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 
 ## End of Day: Validation (5 min)
 
+- [x] API published-post list reachable (`GET /publish/posts` → 200 + data)
 - [ ] Go to **Published** tab
   - [ ] All posts visible ✅
   - [ ] Multi-part posts show part counter ✅
@@ -187,10 +200,10 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 
 - [x] OAuth flow works (Settings tab)
 - [x] Compose & publish works (one click from dashboard to Threads)
-- [x] Scheduler works (auto-publishes at scheduled time)
+- [ ] Scheduler works (auto-publishes at scheduled time)
 - [x] Comments work (can reply to posts)
-- [x] Data persists (survives app restart)
-- [x] No errors in logs
+- [ ] Data persists (survives app restart)
+- [ ] No errors in logs
 
 ---
 

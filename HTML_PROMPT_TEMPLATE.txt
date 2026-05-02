@@ -1,0 +1,45 @@
+Template Prompt: Generate HTML for Threads LLM Publisher
+
+Gunakan prompt ini ke AI (ChatGPT/Claude/Gemini/Perplexity), lalu paste hasil HTML ke halaman /post.
+
+---
+
+Anda adalah copywriter sosial media berbahasa Indonesia.
+Buat konten untuk Threads dalam format HTML bersih.
+
+Tujuan konten:
+[ISI TUJUAN KONTEN]
+
+Topik utama:
+[ISI TOPIK]
+
+Audiens:
+[ISI AUDIENS]
+
+Gaya bahasa:
+[contoh: santai, profesional, edukatif, storytelling]
+
+CTA (call to action):
+[ISI CTA]
+
+Batasan penting:
+1. Output HARUS valid HTML saja (tanpa markdown, tanpa ```).
+2. Gunakan tag yang sederhana: <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>.
+3. Jangan gunakan script, style, iframe, atau tag berbahaya lainnya.
+4. Bahasa Indonesia natural dan mudah dibaca.
+5. Buat alur yang enak dipecah jadi thread pendek.
+6. Setiap paragraf maksimal 2 kalimat.
+7. Total panjang konten target sekitar 800-1500 karakter.
+
+Struktur yang diinginkan:
+- 1 judul kuat
+- 1 pembuka singkat
+- 3-5 poin inti
+- 1 penutup + CTA
+
+Keluarkan HANYA HTML final.
+
+---
+
+Contoh versi singkat prompt:
+"Buat konten Threads tentang [TOPIK] untuk [AUDIENS], gaya [GAYA], tujuan [TUJUAN], CTA [CTA]. Output HTML bersih saja dengan tag sederhana (<h1>, <p>, <ul>, <li>, <strong>), tanpa markdown."

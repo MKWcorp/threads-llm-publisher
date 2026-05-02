@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Compose } from "./components/Compose";
 import { Scheduled } from "./components/Scheduled";
 import { Published } from "./components/Published";
@@ -7,18 +8,17 @@ import { Settings } from "./components/Settings";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
 
-type Tab = "compose" | "scheduled" | "published" | "comments" | "settings";
-
-const tabs: { id: Tab; label: string; icon: string }[] = [
-  { id: "compose", label: "Compose", icon: "✍️" },
-  { id: "scheduled", label: "Scheduled", icon: "📅" },
-  { id: "published", label: "Published", icon: "✅" },
-  { id: "comments", label: "Comments", icon: "💬" },
-  { id: "settings", label: "Settings", icon: "⚙️" }
+const tabs: { to: string; label: string; icon: string }[] = [
+  { to: "/post", label: "Compose", icon: "✍️" },
+  { to: "/schedule", label: "Scheduled", icon: "📅" },
+  { to: "/published", label: "Published", icon: "✅" },
+  { to: "/comments", label: "Comments", icon: "💬" },
+  { to: "/settings", label: "Settings", icon: "⚙️" }
 ];
 
-export function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("compose");
+function AppLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [refreshScheduled, setRefreshScheduled] = useState(0);
 
   const callbackHint = useMemo(() => {
@@ -30,16 +30,15 @@ export function App() {
 
   // Handle OAuth redirect
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     if (params.get("connected") === "true") {
-      window.history.replaceState({}, "", "/");
-      setActiveTab("compose");
+      navigate("/post", { replace: true });
     }
     if (params.get("error")) {
       alert(`Auth error: ${params.get("error")}`);
-      window.history.replaceState({}, "", "/");
+      navigate("/post", { replace: true });
     }
-  }, []);
+  }, [location.search, navigate]);
 
   return (
     <main style={{ fontFamily: "Inter, Arial, sans-serif", minHeight: "100vh", background: "#fff" }}>
@@ -57,42 +56,59 @@ export function App() {
       <nav style={{ borderBottom: "1px solid #ddd", background: "#f5f5f5" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", overflowX: "auto" }}>
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+            <NavLink
+              key={tab.to}
+              to={tab.to}
               style={{
                 padding: "12px 16px",
                 border: "none",
-                background: activeTab === tab.id ? "#fff" : "transparent",
-                borderBottom: activeTab === tab.id ? "3px solid #1f2937" : "3px solid transparent",
+                background: location.pathname === tab.to ? "#fff" : "transparent",
+                borderBottom: location.pathname === tab.to ? "3px solid #1f2937" : "3px solid transparent",
                 cursor: "pointer",
                 fontSize: "0.95em",
-                fontWeight: activeTab === tab.id ? "600" : "400",
-                whiteSpace: "nowrap"
+                fontWeight: location.pathname === tab.to ? "600" : "400",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+                color: "inherit",
+                display: "inline-block"
               }}
             >
               {tab.icon} {tab.label}
-            </button>
+            </NavLink>
           ))}
         </div>
       </nav>
 
       {/* Content */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem" }}>
-        {activeTab === "compose" && (
-          <Compose
-            apiBaseUrl={apiBaseUrl}
-            onDone={() => {
-              setRefreshScheduled((prev) => prev + 1);
-              setTimeout(() => setActiveTab("scheduled"), 1000);
-            }}
+        <Routes>
+          <Route
+            path="/post"
+            element={
+              <Compose
+                apiBaseUrl={apiBaseUrl}
+                onDone={() => {
+                  setRefreshScheduled((prev) => prev + 1);
+                  setTimeout(() => navigate("/schedule"), 1000);
+                }}
+              />
+            }
           />
-        )}
-        {activeTab === "scheduled" && <Scheduled apiBaseUrl={apiBaseUrl} key={refreshScheduled} />}
-        {activeTab === "published" && <Published apiBaseUrl={apiBaseUrl} />}
-        {activeTab === "comments" && <Comments apiBaseUrl={apiBaseUrl} />}
-        {activeTab === "settings" && <Settings apiBaseUrl={apiBaseUrl} />}
+          <Route path="/compose" element={<Navigate to="/post" replace />} />
+          <Route path="/schedule" element={<Scheduled apiBaseUrl={apiBaseUrl} key={`${refreshScheduled}-${location.key}`} />} />
+          <Route path="/scheduled" element={<Navigate to="/schedule" replace />} />
+          <Route path="/scedule" element={<Navigate to="/schedule" replace />} />
+          <Route path="/published" element={<Published apiBaseUrl={apiBaseUrl} />} />
+          <Route path="/comments" element={<Comments apiBaseUrl={apiBaseUrl} />} />
+          <Route path="/settings" element={<Settings apiBaseUrl={apiBaseUrl} />} />
+          <Route path="/" element={<Navigate to="/post" replace />} />
+          <Route path="*" element={<Navigate to="/post" replace />} />
+        </Routes>
       </div>
     </main>
   );
+}
+
+export function App() {
+  return <AppLayout />;
 }
