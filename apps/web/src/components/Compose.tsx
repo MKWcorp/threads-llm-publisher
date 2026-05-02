@@ -6,6 +6,40 @@ interface ComposeProps {
 }
 
 export function Compose({ apiBaseUrl, onDone }: ComposeProps) {
+  const promptTemplate = `Anda adalah copywriter sosial media berbahasa Indonesia.
+Buat konten untuk Threads dalam format HTML bersih.
+
+Tujuan konten:
+[ISI TUJUAN KONTEN]
+
+Topik utama:
+[ISI TOPIK]
+
+Audiens:
+[ISI AUDIENS]
+
+Gaya bahasa:
+[contoh: santai, profesional, edukatif, storytelling]
+
+CTA (call to action):
+[ISI CTA]
+
+Batasan penting:
+1. Output HARUS valid HTML saja (tanpa markdown, tanpa \`\`\`).
+2. Gunakan tag sederhana: <h1>, <h2>, <p>, <ul>, <li>, <strong>, <em>.
+3. Jangan gunakan script/style/iframe.
+4. Bahasa Indonesia natural dan mudah dibaca.
+5. Setiap paragraf maksimal 2 kalimat.
+6. Target panjang 800-1500 karakter.
+
+Struktur:
+- 1 judul
+- 1 pembuka
+- 3-5 poin inti
+- 1 penutup + CTA
+
+Keluarkan HANYA HTML final.`;
+
   const [htmlInput, setHtmlInput] = useState("");
   const [parts, setParts] = useState<string[]>([]);
   const [editedParts, setEditedParts] = useState<string[]>([]);
@@ -123,6 +157,13 @@ export function Compose({ apiBaseUrl, onDone }: ComposeProps) {
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <h2>Compose Utas dari HTML</h2>
+
+      <div style={{ border: "1px solid #ddd", borderRadius: 4, background: "#f9f9f9" }}>
+        <details>
+          <summary style={{ cursor: "pointer", padding: 10, fontWeight: 600 }}>🧠 Template Prompt AI</summary>
+          <pre style={{ margin: 0, padding: "0 10px 10px", whiteSpace: "pre-wrap", fontSize: "0.9em" }}>{promptTemplate}</pre>
+        </details>
+      </div>
 
       <div>
         <label>HTML dari LLM (Perplexity, ChatGPT, dsb):</label>
